@@ -8,7 +8,9 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
 import android.widget.Button;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -35,25 +37,31 @@ public class MainActivity extends AppCompatActivity {
         textureView = findViewById(R.id.textureView);
         btnCapture = findViewById(R.id.btn_capture);
 
-        if (!checkCameraPermission()) {
+        if (checkCameraPermission()) {
+            initCamera();
+        } else {
             requestCameraPermission();
         }
-        initCamera();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        if (cameraManager != null) {
+            cameraManager.startBackgroundThread();
+            if (textureView.isAvailable()) {
+                cameraManager.openCamera();
+            } else {
+                textureView.setSurfaceTextureListener(cameraManager.getSurfaceTextureListener());
+            }
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        cameraManager.startBackgroundThread();
-        if (textureView.isAvailable()) {
-            cameraManager.openCamera();
-        } else {
-            textureView.setSurfaceTextureListener(cameraManager.getSurfaceTextureListener());
+        if (cameraManager != null) {
+            cameraManager.closeCamera();
         }
     }
 
@@ -69,6 +77,32 @@ public class MainActivity extends AppCompatActivity {
             cameraManager.closeCamera();
             cameraManager.stopBackgroundThread();
             cameraManager = null;
+        }
+    }
+
+    // 重写权限请求结果回调方法
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults, int deviceId) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId);
+        if (requestCode == CAMERA_PERMISSION_REQUEST) {
+            if (grantResults.length > 0 &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // 权限被授予，初始化相机
+                Log.d(TAG, "相机权限已授予");
+
+                // 延迟一小段时间确保UI已准备好
+                textureView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (cameraManager == null) {
+                            initCamera();
+                        }
+                    }
+                });
+            } else {
+                // 权限被拒绝
+                Toast.makeText(this, "需要相机权限才能使用", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
