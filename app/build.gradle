@@ -37,4 +37,11 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
+
+    // TensorFlow Lite 核心库
+    implementation 'org.tensorflow:tensorflow-lite:2.16.1'
+    // GPU加速
+    implementation 'org.tensorflow:tensorflow-lite-gpu:2.16.1'
+    // TFLite任务库（简化输入输出处理）
+    implementation 'org.tensorflow:tensorflow-lite-task-vision:0.4.0'
 }

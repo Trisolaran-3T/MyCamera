@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.example.mycamera.camera.FaceOverlayView;
 import com.example.mycamera.camera.MyCameraManager;
 
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView imageView;
     private Button btnCapture;
     private ImageButton btnSwitch;
+    private ImageButton btnAF;
     private ImageButton btnFlash;
     private ImageButton btnMute;
 
@@ -49,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
         imageView = findViewById(R.id.imageView);
         btnCapture = findViewById(R.id.btn_capture);
         btnSwitch = findViewById(R.id.btn_switch);
+        btnAF = findViewById(R.id.btn_af);
         btnFlash = findViewById(R.id.btn_flash);
         btnMute = findViewById(R.id.btn_mute);
 
@@ -66,6 +69,16 @@ public class MainActivity extends AppCompatActivity {
         btnSwitch.setOnClickListener(v -> {
             if (cameraManager != null) {
                 cameraManager.switchCamera();
+            }
+        });
+        btnAF.setOnClickListener(v -> {
+            if (cameraManager != null) {
+                if (cameraManager.getAF()) {
+//                    btnFlash.setImageResource(R.drawable.flash_off);
+                } else {
+//                    btnFlash.setImageResource(R.drawable.flash_on);
+                }
+                cameraManager.setAF();
             }
         });
         btnFlash.setOnClickListener(v -> {
@@ -193,7 +206,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initCamera() {
-        cameraManager = new MyCameraManager(this, textureView, frameLayout, imageFocus, imageView);
+        FaceOverlayView overlayView = findViewById(R.id.overlayView);
+        cameraManager = new MyCameraManager(this, textureView, frameLayout, imageFocus, imageView, overlayView);
 
     }
 }

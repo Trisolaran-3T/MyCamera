@@ -1,9 +1,9 @@
 package com.example.mycamera.camera;
 
 import android.Manifest;
-import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -11,6 +11,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -18,7 +19,6 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
@@ -33,33 +33,24 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.example.mycamera.MainActivity;
 import com.example.mycamera.R;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 
 public class MyCameraManager {
@@ -93,101 +84,126 @@ public class MyCameraManager {
     private boolean isRearCamera = true; // 默认后置摄像头
     private boolean isFlash = false;
     private boolean isMute = false;
-    private boolean isAutoFocus = true;
+    private boolean isAutoFocus = false;
     private int sensorArrayWidth;
     private int sensorArrayHeight;
     private int imageCount = 0;
     private MediaPlayer mediaPlayer;
 
-    public MyCameraManager(Context context, TextureView textureView, FrameLayout frameLayout, ImageView imageFocus, ImageView imageView) {
+    private FaceDetectorHelper faceDetector;
+    private HandlerThread inferenceThread;
+    private Handler inferenceHandler;
+    private FaceOverlayView overlayView;
+    private boolean faceDetectionEnabled = true; // 控制是否开启人脸检测
+    private long lastDetectionTime = 0; // 用于控制检测频率的时间戳
+
+    public MyCameraManager(Context context, TextureView textureView, FrameLayout frameLayout,
+                           ImageView imageFocus, ImageView imageView, FaceOverlayView overlayView) {
         this.context = context;
         this.textureView = textureView;
         this.frameLayout = frameLayout;
         this.imageFocus = imageFocus;
         this.imageView = imageView;
+        this.overlayView = overlayView;
         cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
 
         startBackgroundThread();
+        initFaceDetector();
         init();
+    }
+
+    private void initFaceDetector() {
+        try {
+            faceDetector = new FaceDetectorHelper(context);
+            startInferenceThread();
+        } catch (IOException e) {
+            Log.e(TAG, "加载人脸检测模型失败", e);
+            faceDetectionEnabled = false;
+        }
     }
 
     private void init() {
         // 预览View的状态监听
         textureView.setSurfaceTextureListener(surfaceTextureListener);
         // 对TextureView注册touch事件实现
+        textureView.setOnTouchListener(touchListener);
+    }
 
-        textureView.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_UP && !isAutoFocus) {
-                    float x = event.getX();
-                    float y = event.getY();
+    private View.OnTouchListener touchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if (event.getAction() == MotionEvent.ACTION_UP && !isAutoFocus) {
+                float x = event.getX();
+                float y = event.getY();
 
-                    // 获取TextureView相对于屏幕的绝对位置
-                    int[] location = new int[2];
-                    textureView.getLocationOnScreen(location);
-                    int textureViewX = location[0];
-                    int textureViewY = location[1];
+                // 获取TextureView相对于屏幕的绝对位置
+                int[] location = new int[2];
+                textureView.getLocationOnScreen(location);
+                int textureViewX = location[0];
+                int textureViewY = location[1];
 
-                    Log.i("TAG-T", "onTouch: x:" + x + ", y:" + y);
-                    // 显示ImageView并移动到触摸位置
-                    imageFocus.setVisibility(View.VISIBLE);
-                    imageFocus.setX(textureViewX + x - imageFocus.getWidth() / 2);
-                    imageFocus.setY(textureViewY + y - imageFocus.getHeight() / 2);
+                // 获取 imageFocus 父布局的屏幕位置
+                View parent = (View) imageFocus.getParent();
+                int[] parentLocation = new int[2];
+                parent.getLocationOnScreen(parentLocation);
 
-                    // 设置一个延迟时间后隐藏图片
-                    imageFocus.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            imageFocus.setVisibility(View.GONE);
-                        }
-                    }, 500); // 500ms 延迟隐藏
+                // 显示并移动对焦框，减去父布局偏移，得到相对坐标
+                imageFocus.setVisibility(View.VISIBLE);
+                imageFocus.setX(textureViewX + x - imageFocus.getWidth() / 2 - parentLocation[0]);
+                imageFocus.setY(textureViewY + y - imageFocus.getHeight() / 2 - parentLocation[1]);
 
-                    // 对焦声音
+                // 取消之前的动画，重置透明度
+                imageFocus.animate().cancel();
+                imageFocus.setAlpha(1f);
+                // 使用动画渐隐后隐藏图片
+                imageFocus.animate().alpha(0f).setDuration(500)
+                        .withEndAction(() -> imageFocus.setVisibility(View.GONE))
+                        .start();
+
+                // 对焦声音
 //                    mediaPlayer = MediaPlayer.create(context, R.raw.y15004);
 //                    mediaPlayer.start();
 
-                    // 对焦区域的大小 (50x50)
-                    int focusSize = 50;
+                // 对焦区域的大小 (50x50)
+                int focusSize = 50;
 
-                    // 根据屏幕坐标转换为传感器坐标
-                    int focusX = (int) (((textureView.getWidth() - x) / textureView.getWidth()) * sensorArrayWidth);
-                    int focusY = (int) ((y / textureView.getHeight()) * sensorArrayHeight);
+                // 根据屏幕坐标转换为传感器坐标
+                int focusX = (int) (((textureView.getWidth() - x) / textureView.getWidth()) * sensorArrayWidth);
+                int focusY = (int) ((y / textureView.getHeight()) * sensorArrayHeight);
 
-                    focusX = Math.max(focusSize / 2, Math.min(sensorArrayWidth - focusSize / 2, focusX));
-                    focusY = Math.max(focusSize / 2, Math.min(sensorArrayHeight - focusSize / 2, focusY));
+                focusX = Math.max(focusSize / 2, Math.min(sensorArrayWidth - focusSize / 2, focusX));
+                focusY = Math.max(focusSize / 2, Math.min(sensorArrayHeight - focusSize / 2, focusY));
 
-                    Log.i("TAG-T", "onTouch: focusX:" + focusX + ", focusY:" + focusY);
-                    // 创建MeteringRectangle
-                    MeteringRectangle focusArea = new MeteringRectangle(focusX - focusSize / 2, focusY - focusSize / 2, focusSize, focusSize, MeteringRectangle.METERING_WEIGHT_MAX);
+                Log.i(TAG, "onTouch: focusX:" + focusX + ", focusY:" + focusY);
+                // 创建MeteringRectangle
+                MeteringRectangle focusArea = new MeteringRectangle(focusX - focusSize / 2, focusY - focusSize / 2, focusSize, focusSize, MeteringRectangle.METERING_WEIGHT_MAX);
 
-                    // 关闭自动对焦
-                    if (previewRequestBuilder != null) {
-                        previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+                // 关闭自动对焦
+                if (previewRequestBuilder != null) {
+                    previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
 
-                        // 更新预览请求的对焦区域
-                        previewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{focusArea});
-                        previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START);
-                        try {
-                            cameraCaptureSession.setRepeatingRequest(previewRequestBuilder.build(), null, backgroundHandler);
-                        } catch (CameraAccessException e) {
-                            throw new RuntimeException(e);
-                        }
-
-                        updatePreview();
-                        Log.i("TAG-T", "onTouch: update focus");
+                    // 更新预览请求的对焦区域
+                    previewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{focusArea});
+                    previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START);
+                    try {
+                        cameraCaptureSession.setRepeatingRequest(previewRequestBuilder.build(), null, backgroundHandler);
+                    } catch (CameraAccessException e) {
+                        throw new RuntimeException(e);
                     }
 
-                    if (captureRequestBuilder != null) {
-                        // 更新拍摄请求的对焦区域，以便拍摄时使用
-                        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{focusArea});
-                        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START);
-                    }
+                    updatePreview();
+                    Log.i(TAG, "onTouch: update focus");
                 }
-                return true;
+
+                if (captureRequestBuilder != null) {
+                    // 更新拍摄请求的对焦区域，以便拍摄时使用
+                    captureRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{focusArea});
+                    captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START);
+                }
             }
-        });
-    }
+            return true;
+        }
+    };
 
     public TextureView.SurfaceTextureListener getSurfaceTextureListener() {
         return surfaceTextureListener;
@@ -215,12 +231,35 @@ public class MyCameraManager {
 
         @Override
         public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surfaceTexture) {
+            // 如果距离上次检测的时间间隔小于设定值，则跳过本次检测
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastDetectionTime < 500) {
+                return; // 跳过，不执行检测
+            }
+            // 更新最后一次检测的时间戳
+            lastDetectionTime = currentTime;
 
+            if (faceDetectionEnabled && faceDetector != null && textureView.isAvailable() && inferenceHandler != null) {
+                inferenceHandler.post(() -> {
+                    Bitmap bitmap = textureView.getBitmap();
+                    if (bitmap != null) {
+                        Log.d(TAG, "检测帧: " + bitmap.getWidth() + "x" + bitmap.getHeight());
+                        List<RectF> faces = faceDetector.detectFaces(bitmap);
+                        Log.d(TAG, "检测到人脸数量: " + faces.size());
+                        new Handler(context.getMainLooper()).post(() -> {
+                            if (overlayView != null) {
+                                overlayView.setFaces(faces);
+                            }
+                        });
+                    }
+                });
+            }
         }
     };
 
     // 打开相机
     public void openCamera() {
+        startInferenceThread();
         try {
             setCamera();
         } catch (Exception e) {
@@ -273,41 +312,19 @@ public class MyCameraManager {
                     if (textureView.getSurfaceTexture() != null) {
                         textureView.getSurfaceTexture().setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
 
-                        int rotation = context.getResources().getConfiguration().orientation;
-                        int previewWidth, previewHeight;
-                        int containerWidth = textureView.getWidth();
-                        int containerHeight = textureView.getHeight();
+                        // 通过 Matrix 修复拉伸，实现居中裁剪
+                        Matrix matrix = new Matrix();
+                        int vWidth = textureView.getWidth();
+                        int vHeight = textureView.getHeight();
+                        float vRatio = (float) vWidth / vHeight;
+                        float pRatio = (float) previewSize.getHeight() / previewSize.getWidth();
 
-                        if (containerWidth == 0 || containerHeight == 0) {
-                            return;
-                        }
-
-                        // 根据设备方向调整宽高
-                        if (rotation == 1 || rotation == 2) {
-                            previewWidth = previewSize.getHeight();
-                            previewHeight = previewSize.getWidth();
+                        if (vRatio > pRatio) {
+                            matrix.postScale(1f, vRatio / pRatio, vWidth / 2f, vHeight / 2f);
                         } else {
-                            previewWidth = previewSize.getWidth();
-                            previewHeight = previewSize.getHeight();
+                            matrix.postScale(pRatio / vRatio, 1f, vWidth / 2f, vHeight / 2f);
                         }
-
-                        float previewRatio = (float) previewWidth / previewHeight;
-                        float containerRatio = (float) containerWidth / containerHeight;
-
-                        int newWidth, newHeight;
-                        if (previewRatio > containerRatio) {
-                            newWidth = containerWidth;
-                            newHeight = (int) (containerWidth / previewRatio);
-                        } else {
-                            newWidth = (int) (containerHeight * previewRatio);
-                            newHeight = containerHeight;
-                        }
-
-                        // 更新TextureView布局
-//                        ViewGroup.LayoutParams layoutParams = frameLayout.getLayoutParams();
-//                        layoutParams.width = newWidth;
-//                        layoutParams.height = newHeight;
-//                        frameLayout.setLayoutParams(layoutParams);
+                        textureView.setTransform(matrix);
                     }
                 }
 
@@ -323,17 +340,13 @@ public class MyCameraManager {
     }
 
     private Size setPreviewSize(Size[] sizes) {
-        Size optimalSize = null;
-
         for (Size size : sizes) {
-            float aspectRatio = (float) size.getWidth() / size.getHeight();
-            if (Math.abs(aspectRatio - 0.75) < 0.01) {
-                optimalSize = size;
-                break;
+            // 强制寻找 4:3 比例 (0.75)，保证前后置相机的原始输出比例一致
+            if (Math.abs((float) size.getHeight() / size.getWidth() - 0.75f) < 0.01) {
+                return size;
             }
         }
-
-        return optimalSize != null ? optimalSize : sizes[0];
+        return sizes[0];
     }
 
     private void setImageReader() {
@@ -473,13 +486,13 @@ public class MyCameraManager {
                 @Override
                 public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
                     super.onCaptureStarted(session, request, timestamp, frameNumber);
-                    if (!isMute) {
+                    if (isMute) {
                         // 声音
                         if (mediaPlayer == null) {
-//                            mediaPlayer = MediaPlayer.create(context, R.raw.y1374);
+                            mediaPlayer = MediaPlayer.create(context, R.raw.y1116);
                         }
                         if (mediaPlayer != null) {
-//                            mediaPlayer.start();
+                            mediaPlayer.start();
                         }
                     }
                     Log.d("TAG-T", "take a pic");
@@ -586,6 +599,7 @@ public class MyCameraManager {
 
     // 关闭相机
     public void closeCamera() {
+        stopInferenceThread();
         if (cameraCaptureSession != null) {
             cameraCaptureSession.close();
             cameraCaptureSession = null;
@@ -621,11 +635,38 @@ public class MyCameraManager {
         }
     }
 
+    public void startInferenceThread() {
+        if (inferenceThread == null) {
+            inferenceThread = new HandlerThread("InferenceThread");
+            inferenceThread.start();
+            inferenceHandler = new Handler(inferenceThread.getLooper());
+        }
+    }
+
+    public void stopInferenceThread() {
+        if (inferenceThread != null) {
+            inferenceThread.quitSafely();
+            try {
+                inferenceThread.join();
+                inferenceThread = null;
+                inferenceHandler = null;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public boolean getAF() {
+        return isAutoFocus;
+    }
     public boolean getFlash() {
         return isFlash;
     }
     public boolean getMute() {
         return isMute;
+    }
+    public void setAF() {
+        isAutoFocus = !isAutoFocus;
     }
     public void setFlash() {
         isFlash = !isFlash;
