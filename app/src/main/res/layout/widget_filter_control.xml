@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#25000000"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:id="@+id/filter_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical" >
+
+        <!-- 返回按钮 -->
+        <ImageButton
+            android:id="@+id/btn_filter_back"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Back" />
+
+        <!-- 滤镜开关 -->
+        <ImageButton
+            android:id="@+id/btn_filter_toggle"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginEnd="20dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Filter Toggle" />
+
+        <!-- 分隔线 -->
+        <View
+            android:layout_width="1dp"
+            android:layout_height="40dp"
+            android:background="#666666"
+            android:layout_marginEnd="20dp" />
+
+        <!-- 滤镜1：清新 -->
+        <LinearLayout
+            android:id="@+id/filter_none"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginEnd="20dp"
+            android:padding="10dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_back"
+                android:contentDescription="Fresh Filter" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="清新"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:layout_marginTop="5dp" />
+
+        </LinearLayout>
+
+        <!-- 滤镜2：自然 -->
+        <LinearLayout
+            android:id="@+id/filter_natural"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginEnd="20dp"
+            android:padding="10dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_back"
+                android:contentDescription="Natural Filter" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="自然"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:layout_marginTop="5dp" />
+
+        </LinearLayout>
+
+        <!-- 滤镜3：黑白 -->
+        <LinearLayout
+            android:id="@+id/filter_mono"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginEnd="20dp"
+            android:padding="10dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_back"
+                android:contentDescription="Mono Filter" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="黑白"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:layout_marginTop="5dp" />
+
+        </LinearLayout>
+
+        <!-- 滤镜4：复古 -->
+        <LinearLayout
+            android:id="@+id/filter_vintage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginEnd="20dp"
+            android:padding="10dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_back"
+                android:contentDescription="Vintage Filter" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="复古"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:layout_marginTop="5dp" />
+
+        </LinearLayout>
+
+        <!-- 滤镜5：鲜艳 -->
+        <LinearLayout
+            android:id="@+id/filter_vivid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginEnd="20dp"
+            android:padding="10dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_back"
+                android:contentDescription="Vivid Filter" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="鲜艳"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:layout_marginTop="5dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</HorizontalScrollView >

@@ -3,7 +3,6 @@ package com.example.mycamera.camera;
 import android.Manifest;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -19,6 +18,7 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
@@ -44,7 +44,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.mycamera.R;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -84,7 +83,7 @@ public class MyCameraManager {
     private boolean isRearCamera = true; // 默认后置摄像头
     private boolean isFlash = false;
     private boolean isMute = false;
-    private boolean isAutoFocus = false;
+    private boolean isAutoFocus = true;
     private int sensorArrayWidth;
     private int sensorArrayHeight;
     private int imageCount = 0;
@@ -96,6 +95,9 @@ public class MyCameraManager {
     private FaceOverlayView overlayView;
     private boolean faceDetectionEnabled = true; // 控制是否开启人脸检测
     private long lastDetectionTime = 0; // 用于控制检测频率的时间戳
+
+    // 美颜
+    private BeautyProcessor beautyProcessor;
 
     public MyCameraManager(Context context, TextureView textureView, FrameLayout frameLayout,
                            ImageView imageFocus, ImageView imageView, FaceOverlayView overlayView) {
@@ -110,6 +112,10 @@ public class MyCameraManager {
         startBackgroundThread();
         initFaceDetector();
         init();
+    }
+
+    public void setBeautyProcessor(BeautyProcessor beautyProcessor) {
+        this.beautyProcessor = beautyProcessor;
     }
 
     private void initFaceDetector() {
@@ -178,15 +184,30 @@ public class MyCameraManager {
                 // 创建MeteringRectangle
                 MeteringRectangle focusArea = new MeteringRectangle(focusX - focusSize / 2, focusY - focusSize / 2, focusSize, focusSize, MeteringRectangle.METERING_WEIGHT_MAX);
 
-                // 关闭自动对焦
+                // 手动对焦
                 if (previewRequestBuilder != null) {
-                    previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+                    previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
 
                     // 更新预览请求的对焦区域
                     previewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{focusArea});
                     previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START);
                     try {
-                        cameraCaptureSession.setRepeatingRequest(previewRequestBuilder.build(), null, backgroundHandler);
+                        // 使用单次捕获而不是重复请求
+                        cameraCaptureSession.capture(previewRequestBuilder.build(),
+                                new CameraCaptureSession.CaptureCallback() {
+                                    @Override
+                                    public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+                                        // 对焦完成后，自动重置对焦触发状态
+                                        if (previewRequestBuilder != null && !isAutoFocus) {
+                                            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
+                                            try {
+                                                cameraCaptureSession.setRepeatingRequest(previewRequestBuilder.build(), null, backgroundHandler);
+                                            } catch (CameraAccessException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
+                                    }
+                                }, backgroundHandler);
                     } catch (CameraAccessException e) {
                         throw new RuntimeException(e);
                     }
@@ -251,6 +272,7 @@ public class MyCameraManager {
                                 overlayView.setFaces(faces);
                             }
                         });
+                        bitmap.recycle();
                     }
                 });
             }
@@ -400,7 +422,7 @@ public class MyCameraManager {
                     @Override
                     public void onAnimationEnd(Animation animation) {
                         // 在动画结束时隐藏 ImageView
-                        imageView.setVisibility(ImageView.GONE);
+                        imageView.setVisibility(ImageView.INVISIBLE);
                     }
 
                     @Override
@@ -422,6 +444,10 @@ public class MyCameraManager {
         }
 
         Log.d("TAG-T", getNowTime());
+        // 应用美颜处理
+        if (beautyProcessor != null) {
+            bitmap = beautyProcessor.process(bitmap);
+        }
         File file = new File("/storage/emulated/0/DCIM/Camera/", getNowTime());
         try (FileOutputStream output = new FileOutputStream(file)) {
             // 把位图压缩为 JPEG 格式，并写入输出流
@@ -563,12 +589,27 @@ public class MyCameraManager {
                             public void onConfigured(@NonNull CameraCaptureSession session) {
                                 cameraCaptureSession = session;
                                 try {
-                                    // 设置自动对焦
-                                    previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
-                                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                                    // 根据当前状态设置对焦模式
+                                    if (isAutoFocus) {
+                                        // 完全自动对焦模式
+                                        previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                                    } else {
+                                        // 手动对焦模式，但仍保持AUTO模式能力
+                                        previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+                                    }
                                     // 设置自动曝光
-                                    previewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
-                                            CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+                                    previewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+                                    // 自动白平衡
+                                    previewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO);
+
+                                    // 闪光灯
+                                    if (isFlash) {
+                                        // 持续亮
+                                        previewRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+                                    } else {
+                                        // 关闭闪光灯
+                                        previewRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+                                    }
 
                                     cameraCaptureSession.setRepeatingRequest(previewRequestBuilder.build(), null, backgroundHandler);
                                 } catch (CameraAccessException e) {
@@ -667,6 +708,19 @@ public class MyCameraManager {
     }
     public void setAF() {
         isAutoFocus = !isAutoFocus;
+        if (isAutoFocus) {
+            // 恢复完全自动对焦
+            if (previewRequestBuilder != null) {
+                // 清除手动对焦区域
+                previewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, null);
+                // 恢复连续对焦模式
+                previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                // 取消之前的对焦触发
+                previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL);
+                // 更新预览
+                updatePreview();
+            }
+        }
     }
     public void setFlash() {
         isFlash = !isFlash;

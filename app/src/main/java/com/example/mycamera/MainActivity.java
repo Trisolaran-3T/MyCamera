@@ -3,12 +3,15 @@ package com.example.mycamera;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.TextureView;
+import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -16,8 +19,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.example.mycamera.camera.BeautyManager;
 import com.example.mycamera.camera.FaceOverlayView;
 import com.example.mycamera.camera.MyCameraManager;
+import com.example.mycamera.widget.BeautyControlView;
+import com.example.mycamera.widget.FilterControlView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,11 +40,22 @@ public class MainActivity extends AppCompatActivity {
     private ImageView imageView;
     private Button btnCapture;
     private ImageButton btnSwitch;
+
+    ImageButton btnFilter;
+    FilterControlView filterLayout;
+    ImageButton btnBeauty;
+    BeautyControlView beautyLayout;
+    LinearLayout seekbarContainer;
+    private TextView seekbarLabel;
+    private TextView valueDisplay;
+    private SeekBar seekbarGeneral;
+
     private ImageButton btnAF;
     private ImageButton btnFlash;
     private ImageButton btnMute;
 
     private MyCameraManager cameraManager;
+    private BeautyManager beautyManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +68,16 @@ public class MainActivity extends AppCompatActivity {
         imageView = findViewById(R.id.imageView);
         btnCapture = findViewById(R.id.btn_capture);
         btnSwitch = findViewById(R.id.btn_switch);
+
+        btnFilter = findViewById(R.id.sidebar_filter);
+        filterLayout = findViewById(R.id.filter_controls);
+        btnBeauty = findViewById(R.id.sidebar_beauty);
+        beautyLayout = findViewById(R.id.beauty_controls);
+        seekbarContainer = findViewById(R.id.seekbar_container);
+        seekbarLabel = findViewById(R.id.seekbar_label);
+        valueDisplay = findViewById(R.id.value_display);
+        seekbarGeneral = findViewById(R.id.seekbar_general);
+
         btnAF = findViewById(R.id.btn_af);
         btnFlash = findViewById(R.id.btn_flash);
         btnMute = findViewById(R.id.btn_mute);
@@ -71,6 +98,31 @@ public class MainActivity extends AppCompatActivity {
                 cameraManager.switchCamera();
             }
         });
+        if (btnFilter != null) {
+            btnFilter.setOnClickListener(v -> {
+                if (filterLayout.getVisibility() == View.VISIBLE) {
+                    filterLayout.setVisibility(View.INVISIBLE);
+                } else {
+                    if (beautyLayout.getVisibility() == View.VISIBLE) {
+                        beautyLayout.setVisibility(View.INVISIBLE);
+                        hideSeekbar();
+                    }
+                    filterLayout.setVisibility(View.VISIBLE);
+                }
+            });
+        }
+        if (btnBeauty != null) {
+            btnBeauty.setOnClickListener(v -> {
+                if (beautyLayout.getVisibility() == View.VISIBLE) {
+                    beautyLayout.setVisibility(View.INVISIBLE);
+                } else {
+                    if (filterLayout.getVisibility() == View.VISIBLE) {
+                        filterLayout.setVisibility(View.INVISIBLE);
+                    }
+                    beautyLayout.setVisibility(View.VISIBLE);
+                }
+            });
+        }
         btnAF.setOnClickListener(v -> {
             if (cameraManager != null) {
                 if (cameraManager.getAF()) {
@@ -205,9 +257,88 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    BeautyControlView.OnBeautyControlListener beautyControlListener = new BeautyControlView.OnBeautyControlListener() {
+        // 添加当前选中的美颜类型变量
+        private String currentBeautyType = null;
+
+        @Override
+        public void onBeautyValueChanged(String type, int value) {
+            // 不需要处理，BeautyManager 已处理
+        }
+
+        @Override
+        public void onBeautyTypeSelected(String type, int currentValue) {
+            // 保存当前选中的类型
+            currentBeautyType = type;
+            // 通知 BeautyManager 选择美颜类型
+            beautyManager.selectBeautyType(type, seekbarGeneral, valueDisplay);
+            // 显示调节杆容器
+            showSidebarSeekbar(type);
+        }
+
+        @Override
+        public void onBeautyToggleChanged(boolean isEnabled) {
+
+        }
+
+        @Override
+        public void onBeautyReset() {
+            // 重置参数
+            beautyManager.resetToDefaults();
+            if (currentBeautyType != null) {
+                int value = beautyManager.getCurrentValue(currentBeautyType);
+                seekbarGeneral.setProgress(value);
+
+                // 更新数值显示文本
+                if (valueDisplay != null) {
+                    valueDisplay.setText(String.valueOf(value));
+                }
+            }
+        }
+
+        @Override
+        public void onBackClicked() {
+            // 隐藏美颜面板
+            beautyLayout.setVisibility(View.INVISIBLE);
+            hideSeekbar();
+        }
+    };
+
+    private void showSidebarSeekbar(String type) {
+        if (seekbarContainer != null) {
+            // 根据美颜类型设置对应的标签文字
+            String label = "";
+            switch (type) {
+                case "smooth": label = "磨皮"; break;
+                case "eyes": label = "大眼"; break;
+                case "face": label = "瘦脸"; break;
+                case "whiten": label = "美白"; break;
+            }
+
+            // 更新标签文字
+            if (seekbarLabel != null) {
+                seekbarLabel.setText(label);
+            }
+
+            // 显示调节杆容器
+            seekbarContainer.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void hideSeekbar() {
+        if (seekbarContainer != null) {
+            // 隐藏调节杆容器
+            seekbarContainer.setVisibility(View.INVISIBLE);
+        }
+    }
+
     private void initCamera() {
         FaceOverlayView overlayView = findViewById(R.id.overlayView);
         cameraManager = new MyCameraManager(this, textureView, frameLayout, imageFocus, imageView, overlayView);
 
+        beautyManager = new BeautyManager(this);
+        // 获取 BeautyProcessor 并设置给 cameraManager
+        cameraManager.setBeautyProcessor(beautyManager.getBeautyProcessor());
+        beautyLayout.setOnBeautyControlListener(beautyControlListener);
     }
 }

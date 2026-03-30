@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#25000000"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:id="@+id/beauty_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical" >
+
+        <!-- 返回按钮 -->
+        <ImageButton
+            android:id="@+id/btn_beauty_back"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Back" />
+
+        <!-- 美颜开关 -->
+        <ImageButton
+            android:id="@+id/btn_beauty_toggle"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginEnd="10dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Beauty Toggle" />
+
+        <!-- 恢复默认 -->
+        <ImageButton
+            android:id="@+id/btn_beauty_reset"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginEnd="20dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_reset"
+            android:contentDescription="Reset Beauty" />
+
+        <!-- 分隔线 -->
+        <View
+            android:layout_width="1dp"
+            android:layout_height="40dp"
+            android:background="#666666"
+            android:layout_marginEnd="20dp" />
+
+        <!-- 磨皮选项 -->
+        <LinearLayout
+            android:id="@+id/layout_smooth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginEnd="20dp"
+            android:padding="10dp"
+            android:gravity="center"
+            android:background="?android:attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_back"
+                android:contentDescription="磨皮" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="磨皮"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:layout_marginTop="5dp" />
+
+        </LinearLayout>
+
+        <!-- 大眼选项 -->
+        <LinearLayout
+            android:id="@+id/layout_eyes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginEnd="20dp"
+            android:padding="10dp"
+            android:gravity="center"
+            android:background="?android:attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_back"
+                android:contentDescription="大眼" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="大眼"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:layout_marginTop="5dp" />
+
+        </LinearLayout>
+
+        <!-- 瘦脸选项 -->
+        <LinearLayout
+            android:id="@+id/layout_face"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginEnd="20dp"
+            android:padding="10dp"
+            android:gravity="center"
+            android:background="?android:attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_back"
+                android:contentDescription="瘦脸" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="瘦脸"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:layout_marginTop="5dp" />
+
+        </LinearLayout>
+
+        <!-- 美白选项 -->
+        <LinearLayout
+            android:id="@+id/layout_whiten"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginEnd="20dp"
+            android:padding="10dp"
+            android:gravity="center"
+            android:background="?android:attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_back"
+                android:contentDescription="美白" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="美白"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:layout_marginTop="5dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</HorizontalScrollView>

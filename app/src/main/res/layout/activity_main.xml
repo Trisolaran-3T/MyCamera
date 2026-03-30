@@ -23,8 +23,6 @@
             android:layout_height="match_parent" />
     </FrameLayout>
 
-
-
     <ImageView
         android:id="@+id/imageFocus"
         android:layout_width="50dp"
@@ -32,73 +30,192 @@
         android:src="@drawable/focus_frame"
         android:visibility="gone" />
 
-    <ImageButton
-        android:id="@+id/btn_af"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginEnd="180dp"
-        android:layout_marginTop="30dp"
-        android:background="@android:color/transparent"
-        android:src="@drawable/af"
-        android:contentDescription="AF" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="20dp">
 
-    <ImageButton
-        android:id="@+id/btn_flash"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginEnd="100dp"
-        android:layout_marginTop="30dp"
-        android:background="@android:color/transparent"
-        android:src="@drawable/flash_off"
-        android:contentDescription="Flash" />
+        <Spinner
+            android:id="@+id/preview_size"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:background="@color/white"
+            android:layout_gravity="start"
+            android:textColor="@color/black"
+            android:textSize="16sp" />
 
-    <ImageButton
-        android:id="@+id/btn_mute"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginEnd="20dp"
-        android:layout_marginTop="30dp"
-        android:background="@android:color/transparent"
-        android:src="@drawable/mute_off"
-        android:contentDescription="Mute" />
+        <!-- 空白占位 -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
 
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="90dp"
-        android:layout_height="90dp"
-        android:layout_alignParentStart="true"
+        <ImageButton
+            android:id="@+id/btn_af"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="20dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_af"
+            android:contentDescription="AF" />
+
+        <ImageButton
+            android:id="@+id/btn_flash"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="20dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/flash_off"
+            android:contentDescription="Flash" />
+
+        <ImageButton
+            android:id="@+id/btn_mute"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/mute_off"
+            android:contentDescription="Mute" />
+
+    </LinearLayout>
+
+    <!-- 侧边栏左侧的调节杆容器 -->
+    <LinearLayout
+        android:id="@+id/seekbar_container"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottom_layout"
+        android:layout_marginStart="30dp"
+        android:layout_marginBottom="10dp"
+        android:padding="5dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:visibility="invisible">
+
+        <!-- 标签 -->
+        <TextView
+            android:id="@+id/seekbar_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="调节杆文字"
+            android:paddingEnd="10dp"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/value_display"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:paddingEnd="10dp"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <!-- 调节杆 -->
+        <SeekBar
+            android:id="@+id/seekbar_general"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100" />
+
+    </LinearLayout>
+
+    <!-- 侧边栏，靠右 -->
+    <LinearLayout
+        android:id="@+id/sidebar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_above="@id/bottom_layout"
+        android:layout_alignParentEnd="true"
+        android:paddingRight="15dp"
+        android:paddingBottom="10dp">
+
+        <ImageButton
+            android:id="@+id/sidebar_filter"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Sidebar Button Filter"
+            android:layout_marginBottom="10dp" />
+
+        <ImageButton
+            android:id="@+id/sidebar_beauty"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Sidebar Button Beauty" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bottom_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginStart="20dp"
-        android:layout_marginBottom="20dp"
-        android:contentDescription="image"
-        android:scaleType="centerCrop"
-        android:visibility="invisible" />
+        android:orientation="vertical">
 
-    <ImageButton
-        android:id="@+id/btn_switch"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="30dp"
-        android:background="@android:color/transparent"
-        android:src="@drawable/ic_switch"
-        android:contentDescription="Switch" />
+        <!-- 控制面板容器，美颜和滤镜在此位置重叠 -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-    <Button
-        android:id="@+id/btn_capture"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:layout_centerHorizontal="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="30dp"
-        android:background="@drawable/capture_circle_button" />
+            <!-- 滤镜控制面板，默认隐藏 -->
+            <com.example.mycamera.widget.FilterControlView
+                android:id="@+id/filter_controls"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="invisible" />
+
+            <!-- 美颜控制面板，默认隐藏 -->
+            <com.example.mycamera.widget.BeautyControlView
+                android:id="@+id/beauty_controls"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="invisible" />
+
+        </FrameLayout>
+
+        <!-- 底部控制栏 -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="90dp"
+                android:layout_height="90dp"
+                android:layout_marginStart="20dp"
+                android:layout_marginBottom="20dp"
+                android:contentDescription="thumbnail"
+                android:scaleType="centerCrop"
+                android:visibility="invisible"
+                android:layout_gravity="start|bottom" />
+
+            <Button
+                android:id="@+id/btn_capture"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_marginBottom="30dp"
+                android:background="@drawable/capture_circle_button"
+                android:contentDescription="Capture Button"
+                android:layout_gravity="center_horizontal|bottom" />
+
+            <ImageButton
+                android:id="@+id/btn_switch"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_marginEnd="20dp"
+                android:layout_marginBottom="30dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_switch"
+                android:contentDescription="Switch"
+                android:layout_gravity="end|bottom" />
+
+        </FrameLayout>
+
+    </LinearLayout>
 
 </RelativeLayout >
