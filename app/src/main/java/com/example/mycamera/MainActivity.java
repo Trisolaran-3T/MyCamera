@@ -3,6 +3,7 @@ package com.example.mycamera;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
@@ -25,6 +26,8 @@ import com.example.mycamera.camera.MyCameraManager;
 import com.example.mycamera.widget.BeautyControlView;
 import com.example.mycamera.widget.FilterControlView;
 
+import org.opencv.android.OpenCVLoader;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private FrameLayout frameLayout;
     private ImageView imageFocus;
     private ImageView imageView;
+    private TextureView beautyTextureView;
     private Button btnCapture;
     private ImageButton btnSwitch;
 
@@ -62,10 +66,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        initOpenCV();
+
         textureView = findViewById(R.id.textureView);
         frameLayout = findViewById(R.id.frameLayout);
         imageFocus = findViewById(R.id.imageFocus);
         imageView = findViewById(R.id.imageView);
+        beautyTextureView = findViewById(R.id.beautyTextureView);
         btnCapture = findViewById(R.id.btn_capture);
         btnSwitch = findViewById(R.id.btn_switch);
 
@@ -115,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
             btnBeauty.setOnClickListener(v -> {
                 if (beautyLayout.getVisibility() == View.VISIBLE) {
                     beautyLayout.setVisibility(View.INVISIBLE);
+                    hideSeekbar();
                 } else {
                     if (filterLayout.getVisibility() == View.VISIBLE) {
                         filterLayout.setVisibility(View.INVISIBLE);
@@ -257,6 +265,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void initOpenCV() {
+        boolean success = OpenCVLoader.initDebug();
+        if (success) {
+            Log.d(TAG, "OpenCV 库加载成功！");
+        } else {
+            Log.e(TAG, "OpenCV 库加载失败！");
+            // 处理加载失败的情况，例如显示错误提示
+            // 注意：加载失败后，任何调用OpenCV函数的操作都会导致崩溃。
+        }
+    }
+
     BeautyControlView.OnBeautyControlListener beautyControlListener = new BeautyControlView.OnBeautyControlListener() {
         // 添加当前选中的美颜类型变量
         private String currentBeautyType = null;
@@ -333,12 +352,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initCamera() {
-        FaceOverlayView overlayView = findViewById(R.id.overlayView);
-        cameraManager = new MyCameraManager(this, textureView, frameLayout, imageFocus, imageView, overlayView);
-
         beautyManager = new BeautyManager(this);
-        // 获取 BeautyProcessor 并设置给 cameraManager
-        cameraManager.setBeautyProcessor(beautyManager.getBeautyProcessor());
         beautyLayout.setOnBeautyControlListener(beautyControlListener);
+
+        FaceOverlayView overlayView = findViewById(R.id.overlayView);
+        cameraManager = new MyCameraManager(this, textureView, frameLayout, imageFocus, imageView, overlayView, beautyManager, beautyTextureView);
     }
 }

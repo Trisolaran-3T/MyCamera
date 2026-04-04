@@ -21,6 +21,12 @@
             android:id="@+id/overlayView"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+
+        <TextureView
+            android:id="@+id/beautyTextureView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
     </FrameLayout>
 
     <ImageView
@@ -43,7 +49,8 @@
             android:background="@color/white"
             android:layout_gravity="start"
             android:textColor="@color/black"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            android:visibility="invisible"/>
 
         <!-- 空白占位 -->
         <View
