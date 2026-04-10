@@ -109,11 +109,14 @@ public class MainActivity extends AppCompatActivity {
             btnFilter.setOnClickListener(v -> {
                 if (filterLayout.getVisibility() == View.VISIBLE) {
                     filterLayout.setVisibility(View.INVISIBLE);
+                    btnFilter.setImageResource(R.drawable.filter_off);
                 } else {
                     if (beautyLayout.getVisibility() == View.VISIBLE) {
                         beautyLayout.setVisibility(View.INVISIBLE);
                         hideSeekbar();
+                        btnBeauty.setImageResource(R.drawable.beauty_off);
                     }
+                    btnFilter.setImageResource(R.drawable.filter_on);
                     filterLayout.setVisibility(View.VISIBLE);
                 }
             });
@@ -123,10 +126,13 @@ public class MainActivity extends AppCompatActivity {
                 if (beautyLayout.getVisibility() == View.VISIBLE) {
                     beautyLayout.setVisibility(View.INVISIBLE);
                     hideSeekbar();
+                    btnBeauty.setImageResource(R.drawable.beauty_off);
                 } else {
                     if (filterLayout.getVisibility() == View.VISIBLE) {
                         filterLayout.setVisibility(View.INVISIBLE);
+                        btnFilter.setImageResource(R.drawable.filter_off);
                     }
+                    btnBeauty.setImageResource(R.drawable.beauty_on);
                     beautyLayout.setVisibility(View.VISIBLE);
                 }
             });
@@ -134,9 +140,9 @@ public class MainActivity extends AppCompatActivity {
         btnAF.setOnClickListener(v -> {
             if (cameraManager != null) {
                 if (cameraManager.getAF()) {
-//                    btnFlash.setImageResource(R.drawable.flash_off);
+                    btnAF.setImageResource(R.drawable.af_on);
                 } else {
-//                    btnFlash.setImageResource(R.drawable.flash_on);
+                    btnAF.setImageResource(R.drawable.af_off);
                 }
                 cameraManager.setAF();
             }
@@ -304,15 +310,7 @@ public class MainActivity extends AppCompatActivity {
         public void onBeautyReset() {
             // 重置参数
             beautyManager.resetToDefaults();
-            if (currentBeautyType != null) {
-                int value = beautyManager.getCurrentValue(currentBeautyType);
-                seekbarGeneral.setProgress(value);
-
-                // 更新数值显示文本
-                if (valueDisplay != null) {
-                    valueDisplay.setText(String.valueOf(value));
-                }
-            }
+            hideSeekbar();
         }
 
         @Override
@@ -320,6 +318,8 @@ public class MainActivity extends AppCompatActivity {
             // 隐藏美颜面板
             beautyLayout.setVisibility(View.INVISIBLE);
             hideSeekbar();
+            btnBeauty.setImageResource(R.drawable.beauty_off);
+            beautyLayout.resetAllIconsToDefault();
         }
     };
 

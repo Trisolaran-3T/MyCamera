@@ -5,6 +5,7 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -13,6 +14,9 @@ import android.view.View;
 import com.example.mycamera.R;
 
 public class BeautyControlView extends HorizontalScrollView {
+    // 控制按钮
+    private ImageButton btnBeautyBack, btnBeautyToggle;
+    private ImageView iconSmooth, iconEyes, iconFace, iconWhiten;
 
     // 当前选中的美颜类型
     private String selectedBeautyType = null;
@@ -55,6 +59,15 @@ public class BeautyControlView extends HorizontalScrollView {
     private void init(Context context, AttributeSet attrs) {
         LayoutInflater.from(context).inflate(R.layout.widget_beauty_control, this, true);
 
+        // 控制按钮
+        btnBeautyBack = findViewById(R.id.btn_beauty_back);
+        btnBeautyToggle = findViewById(R.id.btn_beauty_toggle);
+
+        iconSmooth = findViewById(R.id.iv_smooth);
+        iconEyes = findViewById(R.id.iv_eyes);
+        iconFace = findViewById(R.id.iv_face);
+        iconWhiten = findViewById(R.id.iv_whiten);
+
         // 设置点击监听
         findViewById(R.id.layout_smooth).setOnClickListener(v -> onBeautyTypeSelected("smooth", smoothValue));
         findViewById(R.id.layout_eyes).setOnClickListener(v -> onBeautyTypeSelected("eyes", eyesValue));
@@ -62,21 +75,43 @@ public class BeautyControlView extends HorizontalScrollView {
         findViewById(R.id.layout_whiten).setOnClickListener(v -> onBeautyTypeSelected("whiten", whitenValue));
 
         // 按钮监听
-        findViewById(R.id.btn_beauty_back).setOnClickListener(v -> {
-            if (listener != null) listener.onBackClicked();
+        btnBeautyBack.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onBackClicked();
+            }
         });
 
-        findViewById(R.id.btn_beauty_toggle).setOnClickListener(v -> {
+        btnBeautyToggle.setOnClickListener(v -> {
             // 开关功能
         });
 
         findViewById(R.id.btn_beauty_reset).setOnClickListener(v -> {
             resetToDefaults();
-            if (listener != null) listener.onBeautyReset();
+            if (listener != null) {
+                listener.onBeautyReset();
+            }
         });
     }
 
     private void onBeautyTypeSelected(String type, int value) {
+        // 在记录新类型前，如果有选中先重置上一个选中视图的图标
+        resetAllIconsToDefault();
+
+        switch (type) {
+            case "smooth":
+                iconSmooth.setImageResource(R.drawable.smooth_on); // 橙色图标资源
+                break;
+            case "eyes":
+                iconEyes.setImageResource(R.drawable.eyes_on);
+                break;
+            case "face":
+                iconFace.setImageResource(R.drawable.face_on);
+                break;
+            case "whiten":
+                iconWhiten.setImageResource(R.drawable.whiten_on);
+                break;
+        }
+
         selectedBeautyType = type;
         currentValue = value;
 
@@ -116,6 +151,14 @@ public class BeautyControlView extends HorizontalScrollView {
         whitenValue = 40;
         currentValue = 0;
         selectedBeautyType = null;
+        resetAllIconsToDefault();
+    }
+
+    public void resetAllIconsToDefault() {
+        iconSmooth.setImageResource(R.drawable.smooth_off);
+        iconEyes.setImageResource(R.drawable.eyes_off);
+        iconFace.setImageResource(R.drawable.face_off);
+        iconWhiten.setImageResource(R.drawable.whiten_off);
     }
 
     public int getCurrentValue() {

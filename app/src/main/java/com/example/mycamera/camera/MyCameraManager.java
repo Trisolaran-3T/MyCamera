@@ -452,7 +452,7 @@ public class MyCameraManager {
             }
 
             // 将YUV转换为Bitmap
-            Bitmap highQualityBitmap = convertYUVDataToBitmapOptimized(imageData, width, height, sensorOrientation, !isRearCamera);
+            Bitmap highQualityBitmap = convertYUVDataToBitmap(imageData, width, height, sensorOrientation, !isRearCamera);
 
             if (highQualityBitmap == null) {
                 return; // 转换失败放弃此帧
@@ -636,10 +636,10 @@ public class MyCameraManager {
     }
 
     // YUV(NV21)转Bitmap
-    private Bitmap convertYUVDataToBitmapOptimized(byte[] yuvData, int width, int height,
+    private Bitmap convertYUVDataToBitmap(byte[] yuvData, int width, int height,
                                                    int sensorOrientation, boolean isFrontCamera) {
         if (yuvData == null || yuvData.length < width * height * 3 / 2) {
-            Log.e(TAG, "convertYUVDataToBitmapOptimized: YUV数据无效或长度不足");
+            Log.e(TAG, "convertYUVDataToBitmap: YUV数据无效或长度不足");
             return null;
         }
         Bitmap bitmap = null;
@@ -661,7 +661,7 @@ public class MyCameraManager {
             return bitmap;
 
         } catch (Exception e) {
-            Log.e(TAG, "convertYUVDataToBitmapOptimized 转换异常", e);
+            Log.e(TAG, "convertYUVDataToBitmap 转换异常", e);
             if (bitmap != null && !bitmap.isRecycled()) {
                 bitmap.recycle();
             }

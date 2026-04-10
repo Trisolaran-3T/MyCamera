@@ -169,7 +169,7 @@ public class FaceDetectorHelper {
             }
 
             // 后处理
-            detectedFaces = postprocessResultsOptimized(boxes2D, scores1D, bitmapWidth, bitmapHeight);
+            detectedFaces = postprocessResults(boxes2D, scores1D, bitmapWidth, bitmapHeight);
             detectedFaces = postProcessFinalResults(detectedFaces, bitmapWidth, bitmapHeight);
 
             // 更新历史记录
@@ -237,7 +237,7 @@ public class FaceDetectorHelper {
         return faces;
     }
 
-    private List<RectF> postprocessResultsOptimized(float[][] boxes, float[] scores,
+    private List<RectF> postprocessResults(float[][] boxes, float[] scores,
                                                     int imageWidth, int imageHeight) {
         List<FaceCandidate> candidates = new ArrayList<>();
 
